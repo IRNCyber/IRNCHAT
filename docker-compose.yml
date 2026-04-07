@@ -1,0 +1,44 @@
+services:
+  ui:
+    build: .
+    command: ["ui", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      - IRNCHAT_PASSPHRASE=change-me
+    ports:
+      - "8000:8000/tcp"
+      - "8765:8765/tcp"
+      - "9999:9999/udp"
+    # If UDP discovery doesn't work (common on Docker Desktop), join by URL.
+
+  # Linux-only: attempt Bluetooth RFCOMM support in-container.
+  # Usage: `docker compose --profile linux-bt up --build ui-linux-bt`
+  # Note: Bluetooth inside containers is highly host/kernel dependent.
+  ui-linux-bt:
+    profiles: ["linux-bt"]
+    build: .
+    command: ["ui", "--host", "0.0.0.0", "--port", "8000"]
+    network_mode: host
+    environment:
+      - IRNCHAT_PASSPHRASE=change-me
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    # You may need `privileged: true` on some systems (less secure).
+
+  host:
+    build: .
+    command: ["wifi-host", "--bind", "0.0.0.0", "--port", "8765"]
+    environment:
+      - IRNCHAT_PASSPHRASE=change-me
+    ports:
+      - "8765:8765/tcp"
+      - "9999:9999/udp"
+    # Note: UDP broadcast discovery can be limited/blocked by Docker Desktop on Windows/macOS.
+
+  join:
+    build: .
+    command: ["wifi-join", "--url", "ws://host:8765/ws"]
+    environment:
+      - IRNCHAT_PASSPHRASE=change-me
+    depends_on:
+      - host

@@ -1,0 +1,2 @@
+[console_scripts]
+irnchat = irnchat.cli:main
